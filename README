@@ -1,0 +1,18 @@
+* The first step is to create an account at ADS - follow the instructions in https://github.com/adsabs/adsabs-dev-api
+to create your ADS API token
+
+* Fill all the info at config.ini file
+
+1. create database (info at createDB.sql)
+
+2. python fillClustersTable.py (fills the table Clusters with the information form the CSV)
+
+3. python fillTables.py (fills the rest of the tables)
+
+4. /authorClusterMatrix/createAuthorClusterMatrix.py (creates the user/item ratings matrix to user to evaluate the recommender)
+algorithms - inside this file there is an argument to chose if you want to create this matrix based on the name or the shortName
+of the authors
+
+NOTE: /clustersNameAnalysis/clustersNameAnalysis.py is a little script that returns groups of names of clusters whose
+simbadID was not found
+
