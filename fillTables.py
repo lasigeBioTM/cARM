@@ -8,6 +8,23 @@ import configargparse
 from cluster import *
 
 
+def db_size(conn):
+    cur = conn.cursor()
+    cur.execute("SELECT count(*) FROM clusters")
+
+    size = cur.fetchall()
+
+    return size
+
+
+def update_full_column(conn, myList):
+    cur = conn.cursor()
+    cur.executemany('UPDATE clusters SET flag= ?', ((val,) for val in myList))
+    conn.commit()
+
+
+
+
 def select_all_clusters(conn):
     """
     Query all rows in the clusters table
@@ -62,7 +79,7 @@ def fillTables(start, simbId, conn, count, idCluster, token):
                      params={'q':simbId,
                              'fl': 'id,author,bibcode,title,year,aff,author_norm,doi',
                              'rows': str(nrows), 'start': str(start), 'fq': 'database:astronomy',
-                             'fq': 'year:[1998 TO 2018]'},
+                             'fq': 'year:[1998 TO 2019]'},
                      headers={"Authorization": "Bearer " + token})
 
 
@@ -160,6 +177,8 @@ if __name__ == '__main__':
           type=str)
     p.add("-tk", "--token", required=True, help="ADS API person token",
           type=str)
+    p.add("-up", "--update", required=True, help="update database",
+          type=bool)
 
 
     options = p.parse_args()
@@ -169,10 +188,19 @@ if __name__ == '__main__':
     columnLimit = options.columnDevLimit
     db_file = options.db_file
     token = options.token
+    update = options.update
 
     conn = create_connection(db_file)
 
     with conn:
+
+        if update:
+            dbSize = db_size(conn)
+
+            myList = np.zeros(dbSize[0][0])
+            update_full_column(conn, myList)
+
+
 
         clustersID, clustersName, simbId, flags = select_all_clusters(conn) #gets id, name, simbid,
         # flags for all clusters
@@ -201,7 +229,7 @@ if __name__ == '__main__':
                 if numFound:
                     updateFlag(conn, clustersID[count], 1)
 
-                time.sleep(5)
+                time.sleep(1)
 
                 count += 1
 
