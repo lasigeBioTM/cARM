@@ -1,8 +1,25 @@
 import configargparse
 import numpy as np
-from dbConnection import *
+import sqlite3
+from sqlite3 import Error
 import pandas as pd
 import sys
+import csv
+
+
+def create_connection(db_file):
+    """ create a database connection to the SQLite database
+        specified by db_file
+    :param db_file: database file
+    :return: Connection object or None
+    """
+    try:
+        conn = sqlite3.connect(db_file)
+        return conn
+    except Error as e:
+        print(e)
+
+    return None
 
 def getUniqueShortNames(conn):
 
@@ -106,6 +123,9 @@ if __name__ == '__main__':
     p.add("-tk", "--token", required=True, help="ADS API person token",
           type=str)
 
+    p.add("-up", "--update", required=True, help="update database",
+          type=bool)
+
     options = p.parse_args()
 
     aggloCSVPath = options.clustersCSVpath
@@ -116,6 +136,67 @@ if __name__ == '__main__':
 
 
     conn = create_connection(db_file)
+
+
+    with open("../data/user_item_rating.csv",'wb') as file:
+
+        if att == "shortName":
+            shortNamesUniqueArray = getUniqueShortNames(conn)
+
+            recMatrix = np.zeros((len(shortNamesUniqueArray), 2166), dtype=int)
+            print(recMatrix.shape)
+            writer = csv.writer(file, delimiter=',')
+            nameCount = 0
+            for name in shortNamesUniqueArray:
+                authorIDs = getAuthorIDForUniqueShortName(conn, name)
+                articlesIDs = getArticleID(conn, authorIDs)
+                clustersIDS = getClusterIDForUniqueAuthor(conn, articlesIDs)
+
+                clusterID, count = np.unique(clustersIDS, return_counts=True)
+
+                for clust, c in zip(clusterID, count):
+                    array =  np.array([nameCount, clust, c])
+
+                    writer.writerow(array)
+
+
+                    #np.savetxt("user_item_shortNames_unique_teste.csv", array, delimiter=",")
+
+
+                    #recMatrix[nameCount][clust-1] = c
+
+                nameCount += 1
+
+        elif att == "name":
+            shortNamesUniqueArray = getUniqueNames(conn)
+
+            recMatrix = np.zeros((len(shortNamesUniqueArray), 2166), dtype=int)
+            print(recMatrix.shape)
+            writer = csv.writer(file, delimiter=',')
+            nameCount = 0
+            for name in shortNamesUniqueArray:
+                authorIDs = getAuthorIDForUniqueShortName(conn, name)
+                articlesIDs = getArticleID(conn, authorIDs)
+                clustersIDS = getClusterIDForUniqueAuthor(conn, articlesIDs)
+
+                clusterID, count = np.unique(clustersIDS, return_counts=True)
+
+                for clust, c in zip(clusterID, count):
+                    array = np.array([nameCount, clust, c])
+
+                    writer.writerow(array)
+
+                    # np.savetxt("user_item_shortNames_unique_teste.csv", array, delimiter=",")
+
+                    # recMatrix[nameCount][clust-1] = c
+
+                nameCount += 1
+
+
+        file.close()
+
+    '''
+
 
     if att == "shortName":
         shortNamesUniqueArray = getUniqueShortNames(conn)
@@ -168,6 +249,7 @@ if __name__ == '__main__':
         df.insert(0, 'user', namesUniqueArray)
 
         df.to_csv("../data/user_item_names_unique.csv")
+        '''
 
 
 

@@ -36,7 +36,8 @@ python fillTables.py
 
 ### Create <user,item,rating> dataset
 ```
-python /authorClusterMatrix/createAuthorClusterMatrix.py
+cd authorClusterMatrix/
+python createAuthorClusterMatrix.py
 ```
 
 

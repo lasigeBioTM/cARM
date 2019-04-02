@@ -125,9 +125,13 @@ if __name__ == '__main__':
 
     p.add("-tk", "--token", required=True, help="ADS API person token",
           type=str)
+    p.add("-up", "--update", required=True, help="update database",
+          type=bool)
+
     options = p.parse_args()
 
     aggloCSVPath = options.clustersCSVpath
+    print(aggloCSVPath)
     columnName = options.columnName
     columnLimit = options.columnDevLimit
     db_file = options.db_file
