@@ -51,5 +51,5 @@ For download of an example of dataset created with this software:
 https://drive.google.com/drive/folders/17a5rSq1iIy4vsgAuj0TGHTY3UbaVpvqq?usp=sharing
 
 
-Here is a simple scrip to create the subsets of the full dataset, by removing users with a minimal number of rated items:
+Here is a simple script to create the subsets of the full dataset, by removing users with a minimal number of rated items:
 https://bitbucket.org/snippets/mcabarros/aenGGo/remove_users_by_min_rating
