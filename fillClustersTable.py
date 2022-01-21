@@ -75,24 +75,26 @@ def getSimbadCode(name):
         print("...object not found in Simbad nor NED")
         id = None
 
-    print id
+    print (id)
     return id
 
 
 def create_clusters_table(clustersNames, conn):
     for name in clustersNames:
-        print name
+        print (name)
+
+
         newName = getNewName(name) # sript that corrects the names of the clusters
 
         if checkIfclusterNameExists(conn, name, newName):
-            print name, " already exists"
+            print (name, " already exists")
             continue
 
         elif checkIfclusterNameExists(conn, name, newName) is None:
-            print "updating existenting entry"
+            print ("updating existenting entry")
             # get new name acording to rules
             simbadID = getSimbadCode(newName)
-            time.sleep(1)
+            time.sleep(5)
 
             clusterID = getClusterID(conn, name, newName)
 
@@ -103,9 +105,9 @@ def create_clusters_table(clustersNames, conn):
         else:
             # create new entry
             simbadID = getSimbadCode(newName)
-            time.sleep(1)
+            time.sleep(5)
 
-            clusterSQL = (newName, simbadID, 0); # sql to update name, simbadId, and flag (which is always zero in these phase)
+            clusterSQL = (name, newName, simbadID, 0); # sql to update name, simbadId, and flag (which is always zero in these phase)
 
             create_cluster(conn, clusterSQL)
 
@@ -137,8 +139,12 @@ if __name__ == '__main__':
     db_file = options.db_file
 
     agglomerates = getAllDataFrame(aggloCSVPath) #gets all the data from the csv file
+    print(agglomerates)
+    print(agglomerates.columns)
 
     clustersNameColumn = getColumn(agglomerates, columnName) # get the column "names"
+    print(clustersNameColumn)
+
 
     if columnLimit != 0:
         clustersNames = np.array(clustersNameColumn.head(n=columnLimit))  # returns only the 10 firts clusters

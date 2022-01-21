@@ -10,11 +10,11 @@ def create_cluster(conn, cluster):
     :param project:
     :return: project id
     """
-    sql = ''' INSERT INTO clusters(name,simbadId,flag)
-              VALUES(?,?,?) '''
+    sql = ''' INSERT INTO clusters(original_name, name,simbadId,flag)
+              VALUES(?,?,?,?) '''
     cur = conn.cursor()
     cur.execute(sql, cluster)
-    print cur.lastrowid
+    print (cur.lastrowid)
     conn.commit()
     return cur.lastrowid
 
@@ -51,7 +51,7 @@ def checkIfclusterNameExists(conn, name, newName):
     cur.execute("SELECT simbadId, count(*) FROM clusters WHERE name==? or name==?", (name,newName))
 
     rows = cur.fetchall()
-    print rows
+    print (rows)
     if rows[0][1]!=0 and rows[0][0] is not None:
 
         checker = True # name exists and have simbid
@@ -59,7 +59,7 @@ def checkIfclusterNameExists(conn, name, newName):
     elif rows[0][0] is None and rows[0][1]!=0 :
         checker = None # name exists but simbid is none
 
-    print "returning ", checker
+    print ("returning ", checker)
     return checker
 
 

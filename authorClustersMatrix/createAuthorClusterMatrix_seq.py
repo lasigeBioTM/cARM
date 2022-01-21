@@ -100,34 +100,83 @@ def getAuthorIDForUniqueName(conn, name):
 
 
 def getArticleID(conn,authorIDs):
-    articlesID = []
+    df = pd.read_sql_query("SELECT * from author_article", conn)
 
-    for id in authorIDs:
+    df_articles = df[df.idAuthor.isin(authorIDs)]
 
-        cur = conn.cursor()
-        cur.execute("select idArticle from author_article where idAuthor=?", (id.item(),))
-
-        rows = cur.fetchall()
-
-        articlesID.append(rows[0][0])
-
-    return np.array(articlesID)
+    return df_articles
 
 def getClusterIDForUniqueAuthor(conn,articlesIDs):
-    clustersID = []
-    print ("size ", articlesIDs.size)
-    for id in articlesIDs:
-        cur = conn.cursor()
-        cur.execute("select idCluster from cluster_article where idArticle=?", (id.item(),))
+    df = pd.read_sql_query("SELECT * from cluster_article", conn)
 
-        rows = cur.fetchall()
-        rows = np.array(rows, dtype=int).flatten().tolist()
-        clustersID.extend(rows)
+    df_clusters = df[df.idArticle.isin(articlesIDs)]
 
 
-    return np.array(clustersID)
+
+    return df_clusters
 
 
+def get_articles(conn, articles_ids):
+    df = pd.read_sql_query("SELECT * from articles", conn)
+
+    df_articles = df[df.id.isin(articles_ids)]
+
+    df_articles['bibcode'] = df_articles['bibcode'].str.decode("utf-8")
+    df_articles['title'] = df_articles['title'].str.decode("utf-8")
+    df_articles['doi'] = df_articles['doi'].str.decode("utf-8")
+
+    return df_articles
+
+
+def get_clusters_table(conn):
+
+    df = pd.read_sql_query("SELECT * from clusters", conn)
+
+    return df
+
+def get_articles_table(conn):
+
+    df = pd.read_sql_query("SELECT * from articles", conn)
+    df['bibcode'] = df['bibcode'].str.decode("utf-8")
+    df['title'] = df['title'].str.decode("utf-8")
+    df['doi'] = df['doi'].str.decode("utf-8")
+
+    return df
+
+def get_author_article_table(conn):
+
+    df = pd.read_sql_query("SELECT * from author_article", conn)
+
+    return df
+
+
+def get_authors_table(conn):
+
+    df = pd.read_sql_query("SELECT * from authors", conn)
+
+    df['shortName'] = df['shortName'].str.decode("utf-8")
+    df['name'] = df['name'].str.decode("utf-8")
+    df['affiliation'] = df['affiliation'].str.decode("utf-8")
+
+    return df
+
+
+def get_cluster_article_table(conn):
+
+    df = pd.read_sql_query("SELECT * from cluster_article", conn)
+
+    return df
+
+
+
+def map_clusterid_to_name(df, clusters):
+
+
+    df["item_name"] = df["idCluster"].map(clusters.set_index('id')["name"]).fillna(0)
+
+    #print(df)
+
+    return df
 
 
 if __name__ == '__main__':
@@ -158,38 +207,68 @@ if __name__ == '__main__':
 
     conn = create_connection(db_file)
 
+    clusters = get_clusters_table(conn)
+    all_articles = get_articles_table(conn)
+    authors = get_authors_table(conn)
+    author_article = get_author_article_table(conn)
+    cluster_article = get_cluster_article_table(conn)
 
-    with open("/data/astro_data/user_item_rating.csv",'w') as file:
+
+
+
+    with open("/data/astro_data/user_item_rating_user_name_item_name_year.csv",'w') as file:
 
         if att == "shortName":
             shortNamesUniqueArray = getUniqueShortNames(conn)
 
-            #recMatrix = np.zeros((len(shortNamesUniqueArray), 2166), dtype=int)
-            #print(recMatrix.shape)
             writer = csv.writer(file, delimiter=',')
             nameCount = 0
             for name in shortNamesUniqueArray:
+                print(name)
+                print(nameCount, ' - ', len(shortNamesUniqueArray))
+                #authorIDs = getAuthorIDForUniqueShortName(conn, name)
+                authorIDs = np.array(authors[authors.shortName==name].id).flatten()
 
-                authorIDs = getAuthorIDForUniqueShortName(conn, name)
-                articlesIDs = getArticleID(conn, authorIDs)
-                clustersIDS = getClusterIDForUniqueAuthor(conn, articlesIDs)
+                #authorid_articleid = getArticleID(conn, authorIDs) #autor,article
+                authorid_articleid  = author_article[author_article.idAuthor.isin(authorIDs)]
 
-                clusterID, count = np.unique(clustersIDS, return_counts=True)
-
-                for clust, c in zip(clusterID, count):
-                    array =  np.array([nameCount, clust, c])
-
-
-                    writer.writerow([nameCount, clust, c])
-
-                    file.flush()
+                #articles = get_articles(conn, authorid_articleid.idArticle)
+                articles = all_articles[all_articles.id.isin(authorid_articleid.idArticle)]
 
 
+                #clustersIDS = getClusterIDForUniqueAuthor(conn, authorid_articleid.idArticle)
+                clustersIDS = cluster_article[cluster_article.idArticle.isin(articles.id)]
 
-                    #np.savetxt("user_item_shortNames_unique_teste.csv", array, delimiter=",")
+
+                clustersIDS['year'] = articles[articles.id.isin(clustersIDS.idArticle)].year
 
 
-                    #recMatrix[nameCount][clust-1] = c
+
+                clustersIDS['user'] = nameCount
+                clustersIDS['user_name'] = name
+                clustersIDS['rating'] = 1
+                #print(clusters[clusters.id.isin(clustersIDS.idCluster)].name)
+                clustersIDS = map_clusterid_to_name(clustersIDS, clusters)
+                #clustersIDS['item_name'] = np.array(clusters[clusters.id.isin(clustersIDS.idCluster)].name)
+                #print(clustersIDS)
+
+
+                to_save = clustersIDS[['user', 'idCluster', 'rating', 'user_name', 'item_name', 'year']]
+                #print(to_save)
+
+                to_save.to_csv(file, mode='a', header=False, index=False)
+
+
+
+                # for item in clustersIDS.idCluster:
+                #     article_year = clustersIDS[clustersIDS.year]
+                #     cluster_name = clusters[clusters.id==item].name.iloc[0]
+                #
+                #
+                #
+                #     writer.writerow([nameCount, item, 1, name, cluster_name, article_year])
+                #     file.flush()
+
 
                 nameCount += 1
 
@@ -221,61 +300,6 @@ if __name__ == '__main__':
 
         file.close()
 
-    '''
-
-
-    if att == "shortName":
-        shortNamesUniqueArray = getUniqueShortNames(conn)
-
-        recMatrix = np.zeros((len(shortNamesUniqueArray), 2166), dtype=int)
-        print(recMatrix.shape)
-
-        nameCount = 0
-        for name in shortNamesUniqueArray:
-            authorIDs = getAuthorIDForUniqueShortName(conn, name)
-            articlesIDs = getArticleID(conn, authorIDs)
-            clustersIDS = getClusterIDForUniqueAuthor(conn, articlesIDs)
-
-            clusterID, count = np.unique(clustersIDS, return_counts=True)
-
-            for clust, c in zip(clusterID, count):
-                recMatrix[nameCount][clust-1] = c
-
-            nameCount += 1
-
-        print "max in user/item matrix ", np.amax(recMatrix)
-        df = pd.DataFrame(recMatrix, columns=np.arange(1, 2167))
-        df.insert(0, 'user', shortNamesUniqueArray)
-
-        df.to_csv("../data/user_item_shortNames_unique.csv")
-
-
-
-    elif att == "name":
-        namesUniqueArray = getUniqueNames(conn)
-
-        recMatrix = np.zeros((len(namesUniqueArray), 2166), dtype=int)
-        print(recMatrix.shape)
-
-        nameCount = 0
-        for name in namesUniqueArray:
-            authorIDs = getAuthorIDForUniqueName(conn, name)
-            articlesIDs = getArticleID(conn, authorIDs)
-            clustersIDS = getClusterIDForUniqueAuthor(conn, articlesIDs)
-
-            clusterID, count = np.unique(clustersIDS, return_counts=True)
-
-            for clust, c in zip(clusterID, count):
-                recMatrix[nameCount][clust - 1] = c
-
-            nameCount += 1
-
-        print "max in user/item matrix ", np.amax(recMatrix)
-        df = pd.DataFrame(recMatrix, columns=np.arange(1, 2167))
-        df.insert(0, 'user', namesUniqueArray)
-
-        df.to_csv("../data/user_item_names_unique.csv")
-        '''
 
 
 

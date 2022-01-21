@@ -39,7 +39,7 @@ def select_all_clusters(conn):
     # for row in rows:
     #     print(row)
 
-    return np.array(rows)[:,0], np.array(rows)[:,1], np.array(rows)[:,2], np.array(rows)[:,3]
+    return np.array(rows)[:,0], np.array(rows)[:,2], np.array(rows)[:,3], np.array(rows)[:,4]
 
 
 # def getSimbadCode(name):
@@ -71,7 +71,7 @@ def getNewString(name):
 
 
 def fillTables(start, simbId, conn, count, idCluster, token):
-    print simbId
+    print (simbId)
 
     nrows = 2000
 
@@ -79,20 +79,25 @@ def fillTables(start, simbId, conn, count, idCluster, token):
                      params={'q':simbId,
                              'fl': 'id,author,bibcode,title,year,aff,author_norm,doi',
                              'rows': str(nrows), 'start': str(start), 'fq': 'database:astronomy',
-                             'fq': 'year:[1998 TO 2019]'},
+                             'fq': 'year:[1998 TO 2020]'},
                      headers={"Authorization": "Bearer " + token})
 
 
     a = r.json()
 
     if r.ok:
-        print "ok"
+        print ("ok")
 
-    numFound = a['response']['numFound']
+    numFound = a["response"]["numFound"]
 
-    print 'numfound = ', numFound
+    #numFound = a['response']['numFound']
+
+    print ('numfound = ', numFound)
 
     numberOfRunning = np.ceil(numFound/nrows)
+    #print(numberOfRunning)
+    #print(count)
+    count += 1
 
     if len(a['response']['docs']) != 0:
         for doc in a['response']['docs']:
@@ -101,7 +106,7 @@ def fillTables(start, simbId, conn, count, idCluster, token):
                 author = doc['author']
             else:
                 if 'bibcode' in doc:
-                    print doc['bibcode'], " paper without authors"
+                    print (doc['bibcode'], " paper without authors")
 
                 continue
 
@@ -119,7 +124,7 @@ def fillTables(start, simbId, conn, count, idCluster, token):
                         clust_art = (idCluster, articleExistentID);
                         create_cluster_article(conn, clust_art)
 
-                    print bibcode + " already exists"
+                    print (bibcode + " already exists")
                     continue
 
             if 'title' in doc:
@@ -152,10 +157,13 @@ def fillTables(start, simbId, conn, count, idCluster, token):
             if 'aff' in doc:
                 aff = doc['aff']
 
+            if len(author_norm) != len(author):
+                continue
+
             processingAuthors(conn, author, author_norm, aff, articleID)
 
     if count < numberOfRunning:
-        count += 1
+
         start = start + nrows
         fillTables(start, name, conn, count, idCluster, token)
 
@@ -194,11 +202,11 @@ if __name__ == '__main__':
 
     with conn:
 
-        if update:
-            dbSize = db_size(conn)
-
-            myList = np.zeros(dbSize[0][0])
-            update_full_column(conn, myList)
+        # if update:
+        #     dbSize = db_size(conn)
+        #
+        #     myList = np.zeros(dbSize[0][0])
+        #     update_full_column(conn, myList)
 
 
 
@@ -213,19 +221,19 @@ if __name__ == '__main__':
         for name in clustersName:
 
             flag = unicodeToINT(flags[count])
-            print count, " ", name
-            print "flag ", flag
+            print (count, " ", name)
+            print ("flag ", flag)
 
             if flag == 1:
-                print name, " already queried"
+                print (name, " already queried")
                 count += 1
                 continue
 
             sys.stdout.flush()
 
             if simbId[count] is not None:
-                print "querying cluster"
-                numFound = fillTables(0, simbId[count], conn, 0, clustersID[count], token)
+                print ("querying cluster")
+                numFound = fillTables(1, simbId[count], conn, 0, clustersID[count], token)
                 if numFound:
                     updateFlag(conn, clustersID[count], 1)
 

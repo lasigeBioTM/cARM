@@ -37,6 +37,7 @@ def create_author(conn, author):
 
 def processingAuthors(conn, authorsNames, authorsNamesNorm, affiliation, articleID):
 
+
     indexCount = 0
     for author in authorsNames:
         name = unicodeToString(author)

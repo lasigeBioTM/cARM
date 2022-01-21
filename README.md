@@ -4,7 +4,7 @@ create Astro Ratings Matrix
 cARM is a software tool that creates a dataset suitable for evaluating recommender systems for Open Cluster of Stars using Scientific Literature.
 
 ### Dependencies:
-* python 2.7
+* python 3.5+
 * sqlite
 * numpy
 * pandas
@@ -39,7 +39,11 @@ python fillTables.py
 cd authorClusterMatrix/
 python createAuthorClusterMatrix.py
 ```
-
+### Create sequential dataset
+```
+cd authorClusterMatrix/
+python createAuthorClusterMatrix_seq.py
+```
 
 ##### Note:
 <sub><sup>The script /clustersNameAnalysis/clustersNameAnalysis.py returns groups of names of clusters whose

@@ -31,9 +31,9 @@ def create_article(conn, article):
     return cur.lastrowid
 
 def getArticleID(conn, bibcodeID):
-    print bibcodeID
+    print (bibcodeID)
     cur = conn.cursor()
-    cur.execute("SELECT id FROM articles WHERE bibcode==?", (bibcodeID,))
+    cur.execute("SELECT id FROM articles WHERE bibcode like ?", (bibcodeID,))
     rows = cur.fetchall()
 
     return rows[0][0]
@@ -43,7 +43,7 @@ def checkIfArticleExists(conn, bibcodeID):
 
     cur = conn.cursor()
 
-    cur.execute("SELECT count(*) FROM articles WHERE bibcode==?", (bibcodeID,))
+    cur.execute("SELECT count(*) FROM articles WHERE bibcode like ?", (bibcodeID,))
 
     rows = cur.fetchall()
     if rows[0][0]!=0:

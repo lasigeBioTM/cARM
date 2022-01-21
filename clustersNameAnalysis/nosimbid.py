@@ -7,6 +7,7 @@ import numpy as np
 import sqlite3
 from sqlite3 import Error
 from difflib import SequenceMatcher
+import pandas as pd
 
 '''
 verifies if there are any cluster with NULL simbID
@@ -74,6 +75,18 @@ def similarityMatrix(names):
         print (similarityMatrix[i][mask])
         print (names[mask])
 
+def deleteWhitesFromArray(array):
+    '''
+    needed because agglomerates csv comes with white spaces
+    :param array: array or list with spaces
+    :return: np array of strings without white spaces in the end
+    '''
+    arrayList = []
+    for x in array:
+        arrayList.append(x.rstrip())
+
+    return arrayList
+
 
 if __name__ == '__main__':
 
@@ -103,17 +116,23 @@ if __name__ == '__main__':
     db_file = options.db_file
 
     conn = create_connection(db_file)
+    csvFile = pd.read_csv(aggloCSVPath)
+    csvFile['name'] = csvFile['name'].str.strip()
+
+    print(csvFile)
 
     with conn:
         names = getClusterNameSimbIdNull(conn) # creates clustersTable
 
-        names = splitBySpace(names)
+        csvFile[csvFile.name.isin(names)][['name','RA_ICRS',  'DE_ICRS']].to_csv('nosimid.csv', index=False)
 
-        name, count = np.unique(names, return_counts=True)
-
-        for x, y in zip(name, count):
-
-            print (x, " - ", y)
+        # names = splitBySpace(names)
+        #
+        # name, count = np.unique(names, return_counts=True)
+        #
+        # for x, y in zip(name, count):
+        #
+        #     print (x, " - ", y)
 
 
 
